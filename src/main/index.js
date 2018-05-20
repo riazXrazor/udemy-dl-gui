@@ -1,6 +1,5 @@
-import { app, BrowserWindow, Menu, ipcMain } from 'electron' // eslint-disable-line
+import { app, BrowserWindow, Menu, ipcMain } from 'electron'
 import { download } from 'electron-file-downloader';
-import { fail } from 'assert';
 import _ from 'lodash';
 import Store from '../core/store';
 import sanitize from 'sanitize-filename';
@@ -8,16 +7,16 @@ import sanitize from 'sanitize-filename';
  * Set `__static` path to static files in production
  * https://simulatedgreg.gitbooks.io/electron-vue/content/en/using-static-assets.html
  */
-
 if (process.env.NODE_ENV !== 'development') {
-  global.__static = require('path').join(__dirname, '/static').replace(/\\/g, '\\\\') // eslint-disable-line
+  global.__static = require('path').join(__dirname, '/static').replace(/\\/g, '\\\\')
 }
 
-
-let mainWindow;
+let mainWindow
+let runningDownload = {};  
+let focusWindow;
 const winURL = process.env.NODE_ENV === 'development'
-  ? 'http://localhost:9080'
-  : `file://${__dirname}/index.html`;
+  ? `http://localhost:9080`
+  : `file://${__dirname}/index.html`
 
   const store = new Store({
     // We'll call our data file 'user-preferences'
@@ -25,53 +24,18 @@ const winURL = process.env.NODE_ENV === 'development'
     defaults: {}
   });
 
-let runningDownload = {};  
-let focusWindow;
-ipcMain.on('download', (event, arg) => {
-
-  arg.event = event;
-  toDownload.push(arg);
-  if(isDownloading == false)
-  {
-    isDownloading = true;
-    startDownload();
-  }
-})
-
-// function startDownload()
-// {
-  // if (toDownload.length > 0) {
-  //    activeDownload = toDownload.pop();
-  //   download(BrowserWindow.getFocusedWindow(), activeDownload.url, {
-  //     onProgress: (item) => {
-  //       activeDownload.event.sender.send('download-' + activeDownload.id, item)
-  //     }
-  //   })
-  //     .then(item => {
-  //       activeDownload.event.sender.send('download-' + activeDownload.id, item);
-  //       if(toDownload.length > 0)
-  //       {
-  //         startDownload();
-  //       }
-  //       else
-  //       {
-  //         isDownloading = false;
-  //       }
-  //     })
-  //     .catch((e) => {
-  //       console.log(e);
-  //       activeDownload.event.sender.send('download-' + activeDownload.id, {
-  //         progress: 0,
-  //         speed: 0,
-  //         remaining: 0,
-  //         status: 'error',
-  //         error: e
-  //       })
-  //     });
-  // }
-// }
-
-function startDownload(event,course){
+  ipcMain.on('download', (event, arg) => {
+  
+    arg.event = event;
+    toDownload.push(arg);
+    if(isDownloading == false)
+    {
+      isDownloading = true;
+      startDownload();
+    }
+  })
+  
+  function startDownload(event,course){
 
     let data = store.get(course);
     let toDownload;
@@ -96,38 +60,60 @@ function startDownload(event,course){
        directory : activeDownload.directory+'/'+sanitize(activeDownload.course_name)+'/'+sanitize(activeDownload.chapter),
        filename: filename,
        onStarted : (downloadItem)=>{
-         console.log(downloadItem);
-        runningDownload[course] = downloadItem;
-        downloadItem.once('done', (e, state) => {
+        runningDownload[course] = {};
+        runningDownload[course].downloadItem = downloadItem;
+        runningDownload[course].event = event;
+        runningDownload[course].item = downloadItem;
+        runningDownload[course].ReceivedBytesArr = [];
+        runningDownload[course].speedValue = 0;
+        
+        runningDownload[course].downloadItem.once('done', (e, state) => {
           if (state === 'completed') {
             
             data.downloads[toDownload].state = 'C';
             data.completed++;
-            event.sender.send('download-progress-' + course, {
-              item : {
-                completed : data.completed,
-                total : data.total,
-                downloading : activeDownload
-              },
-              progress : downloadItem
-            });
+            runningDownload[course].event.sender.send('download-progress-' + course, runningDownload[course].progress);
             store.set(course,data);
               startDownload(event,course);
 
           } else {
-            console.log(`Download failed: ${state}`)
+            console.log(`Download failed ${course}: ${state}`)
           }
         })
-       },
+      
+        runningDownload[course].downloadItem.on('updated', (e, state) => {
+          runningDownload[course].receivedBytes = runningDownload[course].downloadItem.getReceivedBytes();
+          runningDownload[course].totalBytes = runningDownload[course].downloadItem.getTotalBytes();
+          runningDownload[course].ReceivedBytesArr.push(runningDownload[course].receivedBytes);
+         if (runningDownload[course].ReceivedBytesArr.length >= 2) {
+              runningDownload[course].PreviousReceivedBytes = runningDownload[course].ReceivedBytesArr.shift();
+              runningDownload[course].speedValue = Math.max(runningDownload[course].PreviousReceivedBytes, runningDownload[course].ReceivedBytesArr[0]) - Math.min(runningDownload[course].PreviousReceivedBytes, runningDownload[course].ReceivedBytesArr[0]);
+        }
+
+          let o = Object.assign({},{
+            id : course, 
+            item : {
+              completed : _.filter(data.downloads,(o)=>o.state == 'C').length,
+              total : data.downloads.length,
+              downloading : activeDownload
+            },
+             progress : {
+                    progress: runningDownload[course].receivedBytes / runningDownload[course].totalBytes,
+                    speed:  runningDownload[course].speedValue,
+                    remaining: runningDownload[course].totalBytes - runningDownload[course].receivedBytes,
+                    status: state,
+                    total: runningDownload[course].totalBytes,
+                    downloaded: runningDownload[course].receivedBytes
+             }
+          });
+          console.log('download-progress-' + course,o);
+          runningDownload[course].progress = o;
+          runningDownload[course].event.sender.send('download-progress-' + course, runningDownload[course].progress)
+        });
+      
+      },
        onProgress: (item) => {
-         event.sender.send('download-progress-' + course, {
-           item : {
-            completed : data.completed,
-            total : data.total,
-            downloading : activeDownload
-          },
-           progress : item
-         })
+         
        }
      })
        .then(item => {
@@ -137,7 +123,7 @@ function startDownload(event,course){
        })
        .catch((e) => {
          console.log(e);
-         event.sender.send('download-progress-' + course, {
+         runningDownload[course].event.sender.send('download-progress-' + course, {
            progress: 0,
            speed: 0,
            remaining: 0,
@@ -152,7 +138,8 @@ ipcMain.on('pause-download',(event, arg)=>{
   let course = store.get(arg.id);
   if(!_.isEmpty(course))
   {
-    runningDownload[arg.id].pause();
+    runningDownload[arg.id].item.pause();
+    
     course.pause = true;
     store.set(arg.id,course);
   }
@@ -176,9 +163,9 @@ ipcMain.on('initiate-download', (event, arg) => {
     {
       if(!_.isEmpty(runningDownload[arg.id]))
       {
-        if(runningDownload[arg.id].isPaused())
+        if(runningDownload[arg.id].item.isPaused())
         {
-          runningDownload[arg.id].resume();
+          runningDownload[arg.id].item.resume();
           return;
         }
       }
@@ -202,7 +189,8 @@ ipcMain.on('get-status-download',(event, arg)=>{
   
 })
 
-function createWindow() {
+
+function createWindow () {
   /**
    * Initial window options
    */
@@ -213,23 +201,23 @@ function createWindow() {
     resizable:false
   });
 
-  mainWindow.loadURL(winURL);
+  mainWindow.loadURL(winURL)
 
   mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+    mainWindow = null
+  })
 }
 
-app.on('ready', createWindow);
+app.on('ready', createWindow)
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    app.quit()
   }
-});
+})
 
 app.on('activate', () => {
   if (mainWindow === null) {
-    createWindow();
+    createWindow()
   }
-});
+})

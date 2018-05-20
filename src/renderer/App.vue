@@ -1,15 +1,13 @@
 <template>
   <div id="app">
-    <transition name="fade">
-      <router-view></router-view>
-    </transition>
+    <router-view></router-view>
   </div>
 </template>
 
 <script>
   export default {
-    name: 'udemy-dl-gui',
-  };
+    name: 'udemy-dl-gui'
+  }
 </script>
 
 <style>

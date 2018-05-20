@@ -1,5 +1,5 @@
 <template>
-   <li class="course-item" @click="getDetails">
+   <li class="course-item">
             <div class="course-item-data ">
                 <div class="columns is-clearfix">
                   <div class="column is-1 has-text-centered">
@@ -22,10 +22,11 @@
                         <span v-if="isResumeDownload && !isDownloading" class="icon is-small" @click="InitiateDownload">
                           <i class="fa fa-play"></i>
                         </span>
+                      
                         <span v-if="isDownloading" class="icon is-small" @click="StopDownload">
                           <i class="fa fa-pause"></i>
                         </span>
-                        <span class="icon is-small download-btn" @click="InitiateDownload">
+                        <span class="icon is-small download-btn" @click="SelectResolution">
                           <i v-if="isLoading" class="fa fa-refresh fa-spin fa-fw"></i>
                           <i v-if="!isDownloading && !isResumeDownload" class="fa fa-download"></i>
                         </span>
@@ -35,9 +36,18 @@
               </div>
              
             </div>
+            <modal title="Select Resolution" :on-ok="ResolutionSelected" :on-cancel="cancelCb" :is-show="isShow" @close="cancelCb">
+              <a v-if="isLoading" class="button is-loading is-large loading-res">Loading</a>
+              <radio-group v-model="resolution" v-else>
+                  <radio-button v-for="resolution in avilableResolutions" :key="resolution.resolution" :val="resolution.resolution">{{ resolution.label }}</radio-button>
+              </radio-group>
+            </modal>
       </li>
 </template>
 <style lang="scss">
+::-webkit-scrollbar-track{
+    background: #e5e5e5 !important;
+}
 .limited-text{
     white-space: nowrap;
     width: 335px;
@@ -141,23 +151,35 @@
 .download-btn:hover{
   cursor: pointer;
 }
+
+.loading-res{
+      border: 0;
+      margin: 0 auto;
+      display: block;
+      font-size: 35px;
+}
 </style>
 
 <script>
 import { ipcRenderer } from 'electron';
 import core from './../../../core';
+import _ from 'lodash';
+import { setTimeout } from 'timers';
 const {dialog} = require('electron').remote
   export default {
     name: "CourseItem",
     data : function(){
       return {
+        isShow: false,
         isLoading : false,
         isDownloading : false,
         percentage : 0,
         overall_percentage : 0,
         resolution: "",
+        avilableResolutions:[],
         rate: "",
-        isResumeDownload: false
+        isResumeDownload: false,
+        course_vids:[]
       }
     },
     props:{
@@ -190,6 +212,30 @@ const {dialog} = require('electron').remote
             });
     },
     methods: {
+      SelectResolution() {
+      this.isShow = !this.isShow;
+      if(this.isShow && this.avilableResolutions.length == 0)
+      {
+        this.getResolutions();
+      }
+      
+    },
+    ResolutionSelected() {
+      if(!this.resolution)
+      {
+        alert("please select a resolution");
+      }
+      else
+      {
+        this.isShow = false;
+        this.InitiateDownload();
+      }
+    },
+    cancelCb() {
+      this.isShow = false;
+      this.avilableResolutions = [];
+      this.resolution = "";
+    },
       bytesToSize(bytes, decimals) {
         if (bytes == 0) return '0 Bytes';
         var k = 1000,
@@ -206,9 +252,56 @@ const {dialog} = require('electron').remote
           pad(Math.floor(input % 60)),
         ].join(typeof separator !== 'undefined' ? separator : ':');
       },
-      getDetails()
+      getResolutions()
       {
-        //this.$emit('get-details',this.thumbnail,this.id);
+         let id = this.id;
+        this.isLoading = true;
+                core.getCourseDetailsList(id)
+                .then(d => {
+                      let data = JSON.parse(d.body);
+                      let chapter;
+                      let download_queue = [];
+                      let video_number = 1;
+
+                      this.course_vids = data.results;
+
+                      let index = _.findIndex(data.results,function(item){
+                          return item['asset'] ? item['asset'].asset_type == 'Video' : false;
+                      });
+                      let item = data.results[index];
+                    //console.log(item);
+                  
+                        let videos;
+                
+                        if(item.asset.is_downloadable)
+                        {
+                            videos = item.asset.download_urls.Video;
+                        }
+                        else
+                        {
+                            videos = item.asset.stream_urls.Video;
+                        }
+              
+                        for(let i=0;i<videos.length;i++)
+                        {
+                          if(!_.includes(videos[i].label.toLowerCase(),'auto'))
+                          {
+                            this.avilableResolutions.push({
+                              label : videos[i].label,
+                              resolution: videos[i].label
+                            })
+                          }
+                        }
+                    
+                  })
+                
+                .catch(e => {
+                    console.error(e);
+                })
+                .finally(()=>{
+                  this.isLoading = false;
+                });
+      
       },
       InitiateDownload()
       {
@@ -226,12 +319,15 @@ const {dialog} = require('electron').remote
               {
                 return;
               }
-              console.log(args);
+              
               if(args.error)
               {
                 console.log(args.error.getMessage());
                 return;
               }
+              if(args.id == id)
+              {
+                
                 let item = args.item;
                 let progress = args.progress;
 
@@ -240,25 +336,24 @@ const {dialog} = require('electron').remote
                     this.percentage = Math.round(progress.progress * 100);
 
                 this.overall_percentage = Number(parseFloat(item.completed * 100/ item.total).toFixed(2));
+              }
             });
 
             return;
         
         }
 
-        this.isLoading = true;
+        //this.isLoading = true;
 
         let course_name = this.title;
         let video_save_folder =  dialog.showOpenDialog({properties: ['openFile', 'openDirectory']});
           video_save_folder = video_save_folder.pop();
-        core.getCourseDetailsList(id)
-          .then(d => {
-            let data = JSON.parse(d.body);
+ 
             let chapter;
             let download_queue = [];
             let video_number = 1;
-            console.log(data);
-            data.results.map(function(item){
+
+            this.course_vids.map((item)=>{
               
               if(item['_class'] == 'chapter')
               {
@@ -286,7 +381,7 @@ const {dialog} = require('electron').remote
                   list_videos[videos[i].label] = videos[i];
               }
 
-                let url = list_videos[360];
+                let url = this.resolution ? list_videos[this.resolution] : list_videos[360];
 
                 let url_link = url
                 let query_obj = url_link.type.split('/').pop();
@@ -324,24 +419,27 @@ const {dialog} = require('electron').remote
                 console.log(args.error.getMessage());
                 return;
               }
+
+              if(args.id == id)
+              {
+             
+              
+
                 let item = args.item;
                 let progress = args.progress;
-
+              
+              
                     this.resolution = item.downloading.resolution+'p';
                     this.rate = this.bytesToSize(progress.speed)+'/sec';
                     this.percentage = Math.round(progress.progress * 100);
 
                 this.overall_percentage = Number(parseFloat(item.completed * 100/ item.total).toFixed(2));
+              }
             });
 
             
-          })
-          .catch(e => {
-              console.error(e);
-          })
-          .finally(()=>{
-            this.isLoading = false;
-          });
+          
+         
       }
       ,
       StopDownload(){

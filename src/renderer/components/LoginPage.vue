@@ -81,31 +81,31 @@
                             window.localStorage.setItem('udl-access_token',cookies.access_token);
                             window.localStorage.setItem('udl-client_id',cookies.client_id);
 
-                            this.$db.findOne({'username':this.username,'password':this.password})
-                            .then(user => {
-                                  if(!user)
-                                  {
-                                     return this.$db.insert({
-                                       'username':this.username,
-                                       'password':this.password,
-                                       });
-                                  }
-                            })
-                            .then(() => {
+                            // this.$db.findOne({'username':this.username,'password':this.password})
+                            // .then(user => {
+                            //       if(!user)
+                            //       {
+                            //          return this.$db.insert({
+                            //            'username':this.username,
+                            //            'password':this.password,
+                            //            });
+                            //       }
+                            // })
+                            // .then(() => {
                                this.$router.push('/dashboard');
                                if(direct)
                                {
                                  this.isSubmitting = false;
                                }
-                            })
-                            .catch(err => {
-                                this.hasError = "Unable to login";
-                                if(direct)
-                                {
-                                  this.isSubmitting = false;
-                                }
-                                console.log(err);
-                            })
+                            // })
+                            // .catch(err => {
+                            //     this.hasError = "Unable to login";
+                            //     if(direct)
+                            //     {
+                            //       this.isSubmitting = false;
+                            //     }
+                            //     console.log(err);
+                            // })
 
                            
                        }

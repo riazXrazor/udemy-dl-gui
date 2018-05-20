@@ -10,9 +10,11 @@
   
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss">
  @import url('https://fonts.googleapis.com/css?family=Lato:900,400');
-
+::-webkit-scrollbar-track{
+    background: #1f7f5c !important;
+}
 .overlay-loader{
   position: absolute;
   top: 0;

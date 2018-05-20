@@ -5,7 +5,7 @@ import 'vue-blu/dist/css/vue-blu.min.css';
 import App from './App';
 import router from './router';
 import { ipcRenderer} from 'electron';
-import db from './datastore';
+//import db from './datastore';
 
 if (!process.env.IS_WEB) Vue.use(require('vue-electron'));
 
@@ -22,12 +22,11 @@ Vue.config.productionTip = false;
     template: '<App/>',
   }).$mount('#app');
 
-  Vue.prototype.$db = db;
+  // Vue.prototype.$db = db;
 
 
   ipcRenderer.on('udl-logout', function (e, args) {
     vm.$router.push('/login');
   })
-
 
 
