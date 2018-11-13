@@ -6,6 +6,7 @@
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:39.0) Gecko/20100101 Firefox/39.0',
             'X-Requested-With': 'XMLHttpRequest',
             'Host': 'www.udemy.com',
+            'Content-Type': 'application/x-www-form-urlencoded',
             'Referer': 'https://www.udemy.com/join/login-popup',
             'Origin': 'https://www.udemy.com'
           };

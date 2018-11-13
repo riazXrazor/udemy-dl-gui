@@ -29,6 +29,7 @@
     "lodash": "^4.17.10",
     "mkdirp": "^0.5.1",
     "nedb-promises": "^2.1.0",
+    "puppeteer": "^1.6.0",
     "request": "^2.83.0",
     "request-progress": "^3.0.0",
     "request-promise": "^4.2.2",

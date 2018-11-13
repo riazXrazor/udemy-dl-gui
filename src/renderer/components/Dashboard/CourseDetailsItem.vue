@@ -29,7 +29,7 @@
                           <i class="fa fa-download"></i>
                         </span>
                       </div>
-                   </div>
+                     </div>
                   </div>
               </div>
             </div>

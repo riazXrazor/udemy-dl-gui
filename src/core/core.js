@@ -61,7 +61,7 @@ var core_functions = require('./functions');
 
        get_csrf_token(function(r,csrf_token){
          var cookie = r.headers['set-cookie'].join(';');
-         //console.log(r.headers);
+         console.log(r.headers);
          let login_url = 'https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=en_US'
 
          let payload = {'isSubmitted': 1, 'email' : username, 'password': password,
