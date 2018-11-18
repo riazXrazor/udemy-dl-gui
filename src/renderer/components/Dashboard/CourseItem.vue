@@ -16,12 +16,29 @@
                    <div class="meta-data">
                       <div v-if="isDownloading" class="download-meta">
                         <time class="resolution"> {{ resolution }}</time> <time>|</time>
+                         <time class="resolution"> {{ completed }}/{{ total }}</time> <time>|</time>
                         <time class="rate"> {{ rate }}</time>
+                       
                       </div>
+                      <div v-else-if="resolution && completed && total" class="download-meta">
+                        <time class="resolution"> {{ resolution }}p</time> <time>|</time>
+                        <time class="resolution"> {{ completed }}/{{ total }}</time>
+                      </div>
+                      
+                     
                       <div class="controls is-pulled-right">
-                        <span v-if="isResumeDownload && !isDownloading" class="icon is-small" @click="InitiateDownload">
-                          <i class="fa fa-play"></i>
-                        </span>
+                        <template v-if="!isComplete">
+                          <span v-if="isResumeDownload && !isDownloading" class="icon is-small" @click="InitiateDownload">
+                            <i class="fa fa-play"></i>
+                          </span>
+                        </template>
+                        <template v-else-if="resolution && completed && total">
+                          <tooltip :content="'open directory'">
+                            <span class="icon is-small" @click="openDirectory">
+                              <i class="fa fa-folder"></i>
+                            </span>
+                          </tooltip>
+                        </template>
                       
                         <span v-if="isDownloading" class="icon is-small" @click="StopDownload">
                           <i class="fa fa-pause"></i>
@@ -179,7 +196,11 @@ const {dialog} = require('electron').remote
         avilableResolutions:[],
         rate: "",
         isResumeDownload: false,
-        course_vids:[]
+        course_vids:[],
+        total:0,
+        completed:0,
+        directory: '',
+        course_name: ''
       }
     },
     props:{
@@ -204,14 +225,25 @@ const {dialog} = require('electron').remote
             });
 
             ipcRenderer.on('status-download-'+id,(e,data)=>{
+              console.log(data)
               this.overall_percentage = data.percentage;
+              this.total = data.total;
+              this.resolution = data.resolution;
+              this.completed = data.completed;
+             
               if(data.directory)
               {
+                this.directory = data.directory;
+                this.course_name = data.course_name;
                 this.isResumeDownload = true;
               }
             });
     },
     methods: {
+      openDirectory(){
+        console.log("ok")
+        ipcRenderer.send('open-directory',[this.directory,this.course_name]);
+      },
       SelectResolution() {
       this.isShow = !this.isShow;
       if(this.isShow && this.avilableResolutions.length == 0)
@@ -334,6 +366,8 @@ const {dialog} = require('electron').remote
                     this.resolution = item.downloading.resolution+'p';
                     this.rate = this.bytesToSize(progress.speed)+'/sec';
                     this.percentage = Math.round(progress.progress * 100);
+                    this.total = item.total;
+                    this.completed = item.completed;
 
                 this.overall_percentage = Number(parseFloat(item.completed * 100/ item.total).toFixed(2));
               }
@@ -432,14 +466,20 @@ const {dialog} = require('electron').remote
                     this.resolution = item.downloading.resolution+'p';
                     this.rate = this.bytesToSize(progress.speed)+'/sec';
                     this.percentage = Math.round(progress.progress * 100);
-
-                this.overall_percentage = Number(parseFloat(item.completed * 100/ item.total).toFixed(2));
+                    this.total = item.total;
+                    this.completed = item.completed;
+                    this.overall_percentage = Number(parseFloat(item.completed * 100/ item.total).toFixed(2));
               }
             });
 
-            
-          
-         
+             ipcRenderer.on('download-complet-'+id, (event, args) => {
+                    this.completed = this.total;
+                    this.isDownloading = false;
+                    this.overall_percentage = 100
+                    this.directory = args.directory
+                    this.course_name = args.course_name
+                    this.isResumeDownload = false
+             });
       }
       ,
       StopDownload(){
@@ -449,6 +489,11 @@ const {dialog} = require('electron').remote
             ipcRenderer.send('pause-download',{
               id : id
             });
+      }
+    },
+    computed:{
+      isComplete(){
+        return parseInt(this.total) === parseInt(this.completed)
       }
     }
   };

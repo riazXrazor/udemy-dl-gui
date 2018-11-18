@@ -1,14 +1,15 @@
-import { app, BrowserWindow, Menu, ipcMain } from 'electron'
+import { app, BrowserWindow, Menu, ipcMain, shell } from 'electron'
 import { download } from 'electron-file-downloader';
 import _ from 'lodash';
 import Store from '../core/store';
 import sanitize from 'sanitize-filename';
+import path from 'path';
 /**
  * Set `__static` path to static files in production
  * https://simulatedgreg.gitbooks.io/electron-vue/content/en/using-static-assets.html
  */
 if (process.env.NODE_ENV !== 'development') {
-  global.__static = require('path').join(__dirname, '/static').replace(/\\/g, '\\\\')
+  global.__static = path.join(__dirname, '/static').replace(/\\/g, '\\\\')
 }
 
 let mainWindow
@@ -45,9 +46,16 @@ const winURL = process.env.NODE_ENV === 'development'
     {
       toDownload = _.findIndex(data.downloads, function(o) { return o.state == 'P'; });
     }
-    if(!toDownload == '-1')
+    if(toDownload == '-1')
     {
-      event.sender.send('download-complet-' + course, {});
+      let item = data;
+      event.sender.send('download-complet-' + course, {
+        directory : path.join(item.directory),
+        completed: item.completed,
+        total: item.total,
+        resolution: item.downloads[0].resolution,
+        course_name: item.downloads[0].course_name
+      });
       return;
     }
     console.log(toDownload);
@@ -183,11 +191,20 @@ ipcMain.on('get-status-download',(event, arg)=>{
       console.log(arg.id+':'+p);
       event.sender.send('status-download-'+ arg.id, {
         percentage : p,
-        directory : item.directory
+        directory : path.join(item.directory),
+        completed: item.completed,
+        total: item.total,
+        resolution: item.downloads[0].resolution,
+        course_name: item.downloads[0].course_name
       });
     }
   
 })
+
+ipcMain.on('open-directory',(event, arg)=>{
+  //console.log(path.join(arg[0],arg[1]));
+  shell.openItem(path.join(arg[0],sanitize(arg[1])))
+});
 
 
 function createWindow () {
