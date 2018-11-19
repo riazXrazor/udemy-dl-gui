@@ -37,7 +37,7 @@
       }
       ,
       getLoginUrl(){
-        return 'https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=en_US';
+        return 'https://www.udemy.com/api-2.0/auth/udemy-auth/login/?fields[user]=access_token';
       },
       getCourseListUrl(){
         return 'https://www.udemy.com/api-2.0/users/me/subscribed-courses?page_size=100000';

@@ -57,59 +57,29 @@
        }
         this.isSubmitting = true;
         this.hasError = '';
-       core.login(this.username,this.password).then(res=>{
-        let $ = cheerio.load(res.body);
-        console.log(res.body);
-        let error = $('.js-error-list').text() || $('.js-error-alert').text();
-         if(error)
-         {
-            this.hasError = error;
-            if(direct)
-            {
-              this.isSubmitting = false;
-            }
-         }
-         else
-         {
-                let cookies = res.headers['set-cookie'].join(';');
-                        cookies = cookieParser.parse(cookies);
+        core.login(this.username,this.password).then(res=>{
 
-                       if(cookies.access_token && cookies.client_id)
+        console.log(res.body);
+        
+                       let resJson = JSON.parse(res.body);
+                       
+                       if(resJson.access_token && resJson.id)
                        {
                             window.localStorage.setItem('udl-username',this.username);
                             window.localStorage.setItem('udl-password',this.password);
-                            window.localStorage.setItem('udl-access_token',cookies.access_token);
-                            window.localStorage.setItem('udl-client_id',cookies.client_id);
+                            window.localStorage.setItem('udl-access_token',resJson.access_token);
+                            window.localStorage.setItem('udl-client_id',resJson.id);
 
-                            // this.$db.findOne({'username':this.username,'password':this.password})
-                            // .then(user => {
-                            //       if(!user)
-                            //       {
-                            //          return this.$db.insert({
-                            //            'username':this.username,
-                            //            'password':this.password,
-                            //            });
-                            //       }
-                            // })
-                            // .then(() => {
+
                                this.$router.push('/dashboard');
                                if(direct)
                                {
                                  this.isSubmitting = false;
                                }
-                            // })
-                            // .catch(err => {
-                            //     this.hasError = "Unable to login";
-                            //     if(direct)
-                            //     {
-                            //       this.isSubmitting = false;
-                            //     }
-                            //     console.log(err);
-                            // })
+                      
 
                            
-                       }
-                       else {
+                       } else {
 
                           this.hasError = "Unable to login";
                           if(direct)
@@ -118,11 +88,15 @@
                           }
                          
                        }
-         }
+         
        })
        .catch(err => {
-          console.log(err);
-          this.hasError = "Somthing went wrong !!";
+          this.hasError = JSON.parse(err.error).detail;
+          console.log(this.hasError);
+            if(direct)
+            {
+              this.isSubmitting = false;
+            }
        })
        .finally(() => {
          if(!direct)

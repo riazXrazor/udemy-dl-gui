@@ -12,33 +12,29 @@ export default {
  
 function get_csrf_token () {
     let config = session.config();
+    config.headers = {
+        'Authorization': "Basic YWQxMmVjYTljYmUxN2FmYWM2MjU5ZmU1ZDk4NDcxYTY6YTdjNjMwNjQ2MzA4ODI0YjIzMDFmZGI2MGVjZmQ4YTA5NDdlODJkNQ=="
+    }
     config.uri = session.getCsrfUrl();
+    console.log(config)
     return request(config);
 }
 
 
 function login (username, password) {
     let config = session.config();
-        return get_csrf_token().then((res)=>{
-           
-            var cookie = res.headers['set-cookie'].join(';');
-          
-            let $ = cheerio.load(res.body);
-            let csrf_token = $("input[name ='csrfmiddlewaretoken']").val();
+        console.log("login")
+
             let payload = {
-                'isSubmitted': 1, 'email': username, 'password': password,
-                'displayType': 'ajax', 'csrfmiddlewaretoken': csrf_token
+                'email': username, 'password': password
             }
 
-            config.headers['Cookie'] = cookie;
             config['formData'] = payload;
             config['method'] = 'POST';
+            
             config.uri = session.getLoginUrl();
          
             return request(config);
-
-       
-        });
 
 }
 
@@ -46,6 +42,7 @@ function login (username, password) {
 function getCourseList() {
     let config = session.config();
     config.uri = session.getCourseListUrl();
+    console.log(config)
     return request(config);
 }
 
