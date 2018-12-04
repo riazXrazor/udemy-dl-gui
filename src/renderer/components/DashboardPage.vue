@@ -142,6 +142,7 @@
 
       let user = window.localStorage.getItem('udl-username');
       let pass = window.localStorage.getItem('udl-password');
+      console.log(user, pass);
       if(user && pass)
       {
         this.username = user;
@@ -151,6 +152,7 @@
 
                        core.getCourseList()
                             .then(res => {
+                                  console.log(res);
                                   let obj = JSON.parse(res.body); 
                                   this.courseList = obj.results;
                             })

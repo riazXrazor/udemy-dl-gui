@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 19.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 192.1 106.3" style="enable-background:new 0 0 192.1 106.3;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#333333;}
+	.st1{fill:#4E4E4E;}
+	.st2{fill:#FFDD92;}
+	.st3{fill:#966F4E;}
+</style>
+<g>
+	<g>
+		<polygon class="st0" points="159,88.2 96.8,106.3 33.9,88.2 46.8,35.2 146.1,35.2 		"/>
+		<g>
+			<polygon class="st1" points="159,88.2 146.1,35.2 119,35.2 119,99.9 			"/>
+		</g>
+	</g>
+	<g>
+		<polygon class="st0" points="192.1,21.3 96,0 0,21.3 0,30.3 96,59.4 192.1,30.3 		"/>
+		<polygon class="st1" points="96,50.4 0.4,21.3 96,0 192.1,21.3 		"/>
+	</g>
+	<g>
+		<g>
+			<path class="st2" d="M176.4,25.9c-0.2,1.1-1.2,1.8-2.2,1.6l-79.9-0.8c-1.1-0.2-1.8-1.2-1.6-2.2l0,0c0.2-1.1,1.2-1.8,2.2-1.6
+				l79.9,0.8C175.8,23.9,176.5,24.9,176.4,25.9L176.4,25.9z"/>
+			<path class="st2" d="M177,49.3c0,1.1-0.9,1.9-1.9,1.9h-0.1c-1.1,0-1.9-0.9-1.9-1.9V25.1c0-1.1,0.9-1.9,1.9-1.9h0.1
+				c1.1,0,1.9,0.9,1.9,1.9V49.3z"/>
+		</g>
+		<circle class="st2" cx="175.3" cy="54.1" r="6.6"/>
+		<path class="st2" d="M184,93.7c0,1.4-1.1,2.5-2.5,2.5h-12.3c-1.4,0-2.5-1.2-2.5-2.5l2.5-25.9c0-1.4,1.1-2.5,2.5-2.5h7.4
+			c1.4,0,2.5,1.2,2.5,2.5L184,93.7z"/>
+		<path class="st3" d="M181,63.7c0,1.4-1.1,2.5-2.5,2.5h-7.1c-1.4,0-2.5-1.1-2.5-2.5v-4.1c0-1.4,1.1-2.5,2.5-2.5h7.1
+			c1.4,0,2.5,1.1,2.5,2.5V63.7z"/>
+	</g>
+	<ellipse class="st3" cx="96.3" cy="24.5" rx="12.2" ry="4.4"/>
+</g>
+</svg>
