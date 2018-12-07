@@ -115,6 +115,7 @@
   import CourseDetailsItem from './Dashboard/CourseDetailsItem';
   import Loader from './Dashboard/Loader';
   import core from './../../core';
+import { setTimeout } from 'timers';
   export default {
     name: "Dashboard",
     components : {
@@ -139,31 +140,36 @@
       }
     },
     mounted : function(){
-
-      let user = window.localStorage.getItem('udl-username');
-      let pass = window.localStorage.getItem('udl-password');
-      console.log(user, pass);
-      if(user && pass)
-      {
-        this.username = user;
-        this.password = pass;
-      }
-
-
-                       core.getCourseList()
-                            .then(res => {
-                                  console.log(res);
-                                  let obj = JSON.parse(res.body); 
-                                  this.courseList = obj.results;
-                            })
-                            .catch(err => {
-                                console.log(err);
-                            })
-                            .finally(() => {
-                               this.isLoading = false;
-                            })     
+      this.getCourseLists();                          
     },
    methods: {
+      getCourseLists(){
+          let user = window.localStorage.getItem('udl-username');
+          let pass = window.localStorage.getItem('udl-password');
+          console.log(user, pass);
+          if(user && pass)
+          {
+            this.username = user;
+            this.password = pass;
+          }
+
+            setTimeout(()=>{
+              core.getCourseList()
+              .then(res => {
+                    console.log("res->");
+                    let obj = JSON.parse(res.body); 
+                    this.courseList = obj.results;
+              })
+              .catch(err => {
+                  console.log("error->",err);
+                // this.getCourseLists();
+              })
+              .finally(() => {
+                  console.log("finally")
+                  this.isLoading = false;
+              }) 
+            },500)
+      },
       onGetDetails(img,id){
         console.log(img,id);
         this.isLoading = true;

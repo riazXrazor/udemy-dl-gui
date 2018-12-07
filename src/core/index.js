@@ -42,7 +42,7 @@ function login (username, password) {
 function getCourseList() {
     let config = session.config();
     config.uri = session.getCourseListUrl();
-    console.log(config)
+    console.log("config",config)
     return request(config);
 }
 
