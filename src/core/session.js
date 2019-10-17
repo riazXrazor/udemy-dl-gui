@@ -1,25 +1,30 @@
   
   module.exports = {
-        config : () => {
+        config : (host) => {
           
           let headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:39.0) Gecko/20100101 Firefox/39.0',
+            'User-Agent': 'StackOverflow',
             'X-Requested-With': 'XMLHttpRequest',
             'Host': 'www.udemy.com',
             'Authorization': "Basic YWQxMmVjYTljYmUxN2FmYWM2MjU5ZmU1ZDk4NDcxYTY6YTdjNjMwNjQ2MzA4ODI0YjIzMDFmZGI2MGVjZmQ4YTA5NDdlODJkNQ==",
-            'Content-Type': 'application/x-www-form-urlencoded',
             'Referer': 'https://www.udemy.com/join/login-popup',
-            'Origin': 'https://www.udemy.com'
+            'Origin': 'https://www.udemy.com',
+            'Accept': 'application/json'
           };
 
           let access_token = window.localStorage.getItem('udl-access_token'), 
               client_id = window.localStorage.getItem('udl-client_id');
           if ( access_token && client_id )
           {
+
             headers['X-Udemy-Bearer-Token'] = access_token
             headers['X-Udemy-Client-Id'] = client_id
+            headers['X-Udemy-Cache-User'] = client_id
             headers['Authorization'] = "Bearer " + access_token
             headers['X-Udemy-Authorization'] = "Bearer " + access_token
+            headers['Host'] = host.replace('https://','')
+            headers['Referer'] = `${host}/join/login-popup`
+            headers['Origin'] = `${host}/`
           }
 
           return {
@@ -29,7 +34,6 @@
         }
         ,
       set_auth_headers : function(){
-        /*Setting up authentication headers.*/
         
       },
       getCsrfUrl(){
@@ -37,7 +41,7 @@
       }
       ,
       getLoginUrl(){
-        return 'https://www.udemy.com/api-2.0/auth/udemy-auth/login/?fields[user]=access_token';
+        return 'https://www.udemy.com/join/login-popup';
       },
       getCourseListUrl(){
         return 'https://www.udemy.com/api-2.0/users/me/subscribed-courses?page_size=100000';

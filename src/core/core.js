@@ -1,103 +1,82 @@
 var chalk       = require('chalk');
 var fs = require('fs');
-var moment = require('moment');
 var async = require('async');
-var slugify = require('slugify');
-var cookieParser = require('cookie');
 var request = require('request');
 var _           = require('lodash');
 var CLI         = require('clui');
 var Spinner     = CLI.Spinner;
 var cheerio = require('cheerio');
 var inquirer    = require('inquirer');
-var yargs = require('yargs');
 var queryString = require('query-string');
 var jsonfile = require('jsonfile')
 var mkdirp = require('mkdirp');
-var argv = yargs
-    .usage( "Usage: udl <course_url> [-u \"username\"] [-p \"password\"]" )
-    .command( "course_url", "URL of the udemy coures to download", { alias: "url" } )
-    .option( "u", { alias: "username", demand: false, describe: "Username in udemy", type: "string" } )
-    .option( "p", { alias: "password", demand: false, describe: "Password of yor account", type: "string" } )
-    .option( "r", { alias: "resolution", demand: false, describe: "Maximum download video resolution, default resolution is 360, for other video resolutions please refer to the website.", type: "string" } )
-    .option( "o", { alias: "output", demand: false, describe: "Output directory where the videos will be saved, default is current directory", type: "string" } )
-    .help( "?" )
-    .alias( "?", "help" )
-    .epilog( "By Riaz Ali Laskar" )
-    .argv;
+
 
 var session = require('./session');
 var download = require('./download');
-var core_functions = require('./functions');
 
+HOST=`https://www.udemy.com`;
 
- let debug = function(data){
-    return JSON.stringify(data,null,2);
- }
+const agent = superagent.agent();
 
- let safeencode = function(unsafetext){
-  //  safe encode filenames.
-   return slugify(unsafetext);
- }
+const { headers } = session.config();
+_.forEach(headers, function(value, key) {
+    agent.set(key,value);
+});
 
- let save_debug_data = function(debug_data, debug_name, ext){
-    // Save debug data to find bugs.
-    debug_str = debug_data.toString();
-    debug_time = moment().format('YYYY-MM-DD-HH-II-SS');
-    fs.writeFileSync("DEBUG-"+debug_name+"-"+debug_time+"."+ext,debug_str);
- }
+ const login = function(username, password){
+     console.log(agent);
+    return new Promise(function(resolve, reject) {
+        let login_url = `${HOST}/join/login-popup/`;
+        let access_token,client_id;
+        let payload = {'email' : username, 'password': password}
+        agent
+        .get(login_url)
+        .then(res => {
+            var $ = cheerio.load(res.text);
+            payload['csrfmiddlewaretoken'] = $("input[name='csrfmiddlewaretoken']").val();
+        })
+        .then(()=>{
+            payload['locale'] = 'en_US'
 
- let get_csrf_token = function(cb){
-    // Extractig CSRF Token from login page.
-    request({url:'https://www.udemy.com/join/login-popup', headers: session.headers}, function(e,r,b){
-      cb(r,b.match(/name='csrfmiddlewaretoken'\s+value='(.*)'/)[1]);
+            return agent
+            .post(login_url)
+            .type('form')
+            .send(payload)
+        })
+        .then(res => {
+            res.headers['set-cookie'].forEach(function(a){
+
+                let b = a.trim().split(';')[0].split('=');
+                if(b[0]=="access_token"){
+                    access_token = b[1];
+                    return true;
+                } else  if(b[0]=="client_id"){
+                    client_id = b[1];
+                    return true;
+                }
+              });
+
+              if(access_token && client_id)
+              {
+                session.set_auth_headers(HOST,access_token, client_id);
+
+                  resolve({
+                    access_token,
+                    client_id
+                  });
+              }
+              else {
+                reject(new Error("Cannot logging in"));
+              }
+
+        })
+        .catch(r=>{
+            reject(r);
+        });
+
     });
-
- }
-
-
- let login = function(username, password,callback){
-    //  """Login with popup-page."""
-
-       get_csrf_token(function(r,csrf_token){
-         var cookie = r.headers['set-cookie'].join(';');
-         console.log(r.headers);
-         let login_url = 'https://www.udemy.com/join/login-popup/?displayType=ajax&display_type=popup&showSkipButton=1&returnUrlAfterLogin=https%3A%2F%2Fwww.udemy.com%2F&next=https%3A%2F%2Fwww.udemy.com%2F&locale=en_US'
-
-         let payload = {'isSubmitted': 1, 'email' : username, 'password': password,
-                    'displayType': 'ajax', 'csrfmiddlewaretoken': csrf_token}
-
-         let headers = session.headers
-                      headers['Cookie'] = cookie;
-                try{
-                     request.post({url:login_url,headers:headers, form: payload},function(err,httpResponse,body){
-                       if(err){ console.log('error',err); }
-
-                        let cookies = httpResponse.headers['set-cookie'].join(';');
-                        cookies = cookieParser.parse(cookies);
-
-                       if(cookies.access_token && cookies.client_id)
-                       {
-                          session.set_auth_headers(cookies.access_token,cookies.client_id)
-                          callback(cookies.access_token,cookies.client_id);
-                       }
-                       else {
-
-                         console.log(chalk.red("Cannot logging in"));
-                         process.exit(0);
-                       }
-
-                     });
-                   }
-                   catch(e)
-                   {
-                     console.log(chalk.red("Error occured in login"));
-                     process.exit(0);
-                   }
-
-       });
-
- }
+}
 
 
  let get_course_id = function(course_link,callback){

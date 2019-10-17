@@ -38,8 +38,8 @@
     },
     data : function(){
       return {
-        username : '',
-        password : '',
+        username : 'amitabh@codelogicx.com',
+        password : 'ringa112#',
         isSubmitting: false,
         hasError : ''
       };
@@ -57,18 +57,15 @@
        }
         this.isSubmitting = true;
         this.hasError = '';
-        core.login(this.username,this.password).then(res=>{
+        core.login(this.username,this.password).then(({access_token,client_id})=>{
 
-        console.log(res.body);
-        
-                       let resJson = JSON.parse(res.body);
-                       
-                       if(resJson.access_token && resJson.id)
+                       console.log(access_token,client_id);
+                       if(access_token && client_id)
                        {
                             window.localStorage.setItem('udl-username',this.username);
                             window.localStorage.setItem('udl-password',this.password);
-                            window.localStorage.setItem('udl-access_token',resJson.access_token);
-                            window.localStorage.setItem('udl-client_id',resJson.id);
+                            window.localStorage.setItem('udl-access_token',access_token);
+                            window.localStorage.setItem('udl-client_id',client_id);
 
 
                                this.$router.push('/dashboard');
@@ -91,8 +88,8 @@
          
        })
        .catch(err => {
-          this.hasError = JSON.parse(err.error).detail;
-          console.log(this.hasError);
+          console.log('catch',err);
+          this.hasError = err.message;
             if(direct)
             {
               this.isSubmitting = false;
